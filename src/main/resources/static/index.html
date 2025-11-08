@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Inventory Management - Basic</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body{font-family: Arial, sans-serif; margin:20px}
+    input,select{padding:6px;margin:4px}
+    table{border-collapse:collapse;width:100%;margin-top:12px}
+    th,td{border:1px solid #ddd;padding:8px}
+  </style>
+</head>
+<body>
+  <h2>Inventory Management (Basic)</h2>
+  <div>
+    <h3>Add / Update Item</h3>
+    <input id="id" type="hidden" />
+    <input id="name" placeholder="Product name" />
+    <input id="sku" placeholder="SKU" />
+    <input id="category" placeholder="Category" />
+    <input id="quantity" placeholder="Quantity" type="number" />
+    <input id="supplier" placeholder="Supplier" />
+    <input id="price" placeholder="Price" type="number" step="0.01" />
+    <input id="location" placeholder="Location" />
+    <button id="save">Save</button>
+    <button id="clear">Clear</button>
+  </div>
+
+  <div>
+    <h3>Inventory List</h3>
+    <table id="table">
+      <thead><tr><th>ID</th><th>Name</th><th>SKU</th><th>Category</th><th>Qty</th><th>Supplier</th><th>Price</th><th>Location</th><th>Actions</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    const API = '/api/inventory';
+    async function load(){
+      const res = await fetch(API);
+      const data = await res.json();
+      const tbody = document.querySelector('#table tbody');
+      tbody.innerHTML = '';
+      data.forEach(i=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${i.id}</td><td>${i.name||''}</td><td>${i.sku||''}</td><td>${i.category||''}</td><td>${i.quantity||0}</td><td>${i.supplier||''}</td><td>${i.price||0}</td><td>${i.location||''}</td><td><button onclick="edit(${i.id})">Edit</button> <button onclick="del(${i.id})">Delete</button></td>`;
+        tbody.appendChild(tr);
+      })
+    }
+    async function save(){
+      const id = document.getElementById('id').value;
+      const payload = {
+        name: document.getElementById('name').value,
+        sku: document.getElementById('sku').value,
+        category: document.getElementById('category').value,
+        quantity: parseInt(document.getElementById('quantity').value||0),
+        supplier: document.getElementById('supplier').value,
+        price: parseFloat(document.getElementById('price').value||0),
+        location: document.getElementById('location').value
+      };
+      let res;
+      if(id){
+        res = await fetch(API + '/' + id, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      } else {
+        res = await fetch(API, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+      }
+      if(res.ok) { clearForm(); load(); }
+      else { const txt = await res.text(); alert('Error: ' + txt); }
+    }
+    async function edit(id){
+      const res = await fetch(API + '/' + id);
+      if(res.ok){ const i = await res.json(); document.getElementById('id').value = i.id; document.getElementById('name').value = i.name||''; document.getElementById('sku').value = i.sku||''; document.getElementById('category').value = i.category||''; document.getElementById('quantity').value = i.quantity||0; document.getElementById('supplier').value = i.supplier||''; document.getElementById('price').value = i.price||0; document.getElementById('location').value = i.location||''; }
+    }
+    async function del(id){ if(!confirm('Delete item '+id+'?')) return; const res = await fetch(API + '/' + id, {method:'DELETE'}); if(res.ok) load(); else alert(await res.text()); }
+    function clearForm(){ document.getElementById('id').value=''; ['name','sku','category','quantity','supplier','price','location'].forEach(id=>document.getElementById(id).value=''); }
+    document.getElementById('save').addEventListener('click', save);
+    document.getElementById('clear').addEventListener('click', clearForm);
+    load();
+  </script>
+</body>
+</html>
