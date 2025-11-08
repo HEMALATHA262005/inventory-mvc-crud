@@ -1,2 +1,2 @@
-Inventory Management System - Java Full Stack (Basic)
+Inventory Management System - Java Full Stack (crud)
 ----------------------------------------------------
